@@ -1,35 +1,26 @@
 name: project2
-
-on:
-  push:
-    branches:
-      - 'master'
-      - 'dev/**'
-    paths:
-      - "src/**"
-  workflow_dispatch:
-    
-
+on: push
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Install dependencies
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key:  ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+       
+      - name: Install Dependencies
         run: npm install
 
-      - name: Run tests
-        run: npm test
-
-      - name: Build application
+      - name: Build Application
         run: npm run build
 
       - name: Artifact upload
@@ -39,12 +30,50 @@ jobs:
           path: |
              package*
 
-      - name: Deploy
-        run: echo "Deploying to production server..."
-
-  info:
+  test:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Output GitHub context
-        run: echo '${{ toJson(github) }}'
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key:  ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+       
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Tests
+        run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Artifact upload
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact-1
+          path: |
+             package*
+             
+      - name: Deploy Application
+        run: echo "Deploying to production server..."
+
+
+  info:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Output of the Job
+         run: echo "${{ toJson(github) }}" 
+
