@@ -1,20 +1,38 @@
-name: Reusable Node.js Build
+name: Reusable Deployment Engine
 
 on:
   workflow_call:
     inputs:
-      node_version:
+      target_env:
         required: true
         type: string
-        description: "The version of Node.js to use"
+        description: "Target environment runtime execution context"
+    outputs:
+      deployment_outcome:
+        description: "The explicit terminal state of the tracking step"
+        value: ${{ jobs.deploy.outputs.step_result }}
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.target_env }}
+    outputs:
+      step_result: ${{ steps.capture-state.outputs.result }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node_version }} # Uses the dynamic input!
-      - run: npm install
-      - run: npm test
+      - name: Secure Cryptographic Checkout
+        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
+
+      - name: Initialize Deployment Script Assets
+        run: |
+          mkdir -p ./scripts
+          echo 'echo "Executing low-level system deployment sequence..."' > ./scripts/deploy.sh
+          chmod +x ./scripts/deploy.sh
+
+      - name: Execute Core Deployment Matrix Logic
+        id: do_deploy
+        run: ./scripts/deploy.sh
+
+      - name: Propagate Final Pipeline Output States
+        id: capture-state
+        if: always()
+        run: echo "result=${{ steps.do_deploy.outcome }}" >> $GITHUB_OUTPUT
