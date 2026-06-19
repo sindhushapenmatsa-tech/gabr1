@@ -7,7 +7,7 @@ jobs:
       - run: echo "Deploying to Staging..."
 
   deploy-production:
-    if: github.ref == 'refs/heads/main' # Only run for the main branch
+    if: github.ref == 'refs/heads/test' # Only run for the main branch
     environment: production
     runs-on: ubuntu-latest
     steps:
