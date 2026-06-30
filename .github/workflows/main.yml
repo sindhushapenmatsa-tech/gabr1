@@ -52,4 +52,4 @@ jobs:
              package*
 
       - name: Deploy
-        run: echo ""code is deployed"""
+        run: echo "code is deployed"
